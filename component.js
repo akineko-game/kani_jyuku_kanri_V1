@@ -1,5 +1,5 @@
 /**
- * SDS拡張コンポーネント — component.js  v5（全変更統合版）
+ * SDS拡張コンポーネント — component.js  v6（状態駆動UIエンジン統合版）
  *
  * ■ 確定仕様
  *   - 講師管理     : 複数登録対応（カードリスト＋追加ボタン）
@@ -13,6 +13,7 @@
  *   - 座席制御     : 授業コマ（曜日・時間・科目・定員）登録＋生徒予約＋空き可視化
  *   - 設定反映     : 対象コンポーネントをチェックリストで選択
  *   - 割当必須チェック: 未選択時エラー表示
+ *   - 状態駆動UI : Storeから次ステップを推定し、ガイド・進捗・タブ強調を自動更新
  *
  * ■ 画面間連携
  *   [1] 講師管理（稼働）     → 講師割当（候補リスト）
@@ -991,6 +992,104 @@
   }
 
   /* ══════════════════════════════════════
+   *  状態駆動UIエンジン（SDS → UI自動誘導）
+   *  - Storeを読み、現在の業務状態を推定
+   *  - 次に操作すべきタブ・CTA・理由を返す
+   *  - 既存タブUIを壊さず、上位にガイドを重ねる
+   * ══════════════════════════════════════ */
+  const WorkflowEngine = (function () {
+    const STEPS = [
+      { key:'teacherBase',  label:'講師準備',  tab:'teacher-mgmt'   },
+      { key:'teacherAssign',label:'講師割当',  tab:'teacher-assign' },
+      { key:'roomBase',     label:'教室準備',  tab:'room-mgmt'      },
+      { key:'roomAssign',   label:'教室割当',  tab:'room-assign'    },
+      { key:'notify',       label:'通知',      tab:'notification'   },
+      { key:'student',      label:'生徒登録',  tab:'fee'            },
+      { key:'seat',         label:'座席予約',  tab:'seat'           },
+      { key:'settings',     label:'設定確認',  tab:'settings'       },
+    ];
+
+    function status() {
+      const teacherRegistered = Store.teachers.length > 0;
+      const teacherActive     = Store.activeTeachers.length > 0;
+      const teacherAssigned   = !!Store.teacherAssigned;
+      const roomRegistered    = Store.rooms.length > 0;
+      const roomAvailable     = Store.availableRooms.length > 0;
+      const roomAssigned      = !!Store.roomAssigned;
+      const bothAssigned      = teacherAssigned && roomAssigned;
+      const hasStudent        = Store.feeStudents.length > 0;
+      const hasContact        = Store.contacts.length > 0;
+
+      let next = null;
+      if (!teacherRegistered) {
+        next = { tab:'teacher-mgmt', title:'まず講師を登録してください', body:'講師がいないため、授業割当を開始できません。', cta:'講師管理へ進む', level:'warn' };
+      } else if (!teacherActive) {
+        next = { tab:'teacher-mgmt', title:'講師を稼働状態にしてください', body:'登録済み講師はいますが、割当に使える稼働中講師がいません。', cta:'講師管理へ進む', level:'warn' };
+      } else if (!teacherAssigned) {
+        next = { tab:'teacher-assign', title:'講師を授業に割り当てましょう', body:'稼働中講師がいます。次は担当講師を選択します。', cta:'講師割当へ進む', level:'info' };
+      } else if (!roomRegistered) {
+        next = { tab:'room-mgmt', title:'教室を登録してください', body:'講師は割当済みですが、教室が未登録です。', cta:'教室管理へ進む', level:'warn' };
+      } else if (!roomAvailable) {
+        next = { tab:'room-mgmt', title:'使用可能な教室を準備してください', body:'教室はありますが、割当に使える教室がありません。', cta:'教室管理へ進む', level:'warn' };
+      } else if (!roomAssigned) {
+        next = { tab:'room-assign', title:'教室を授業に割り当てましょう', body:'講師は割当済みです。次は使用教室を選択します。', cta:'教室割当へ進む', level:'info' };
+      } else if (bothAssigned) {
+        next = { tab:'notification', title:'授業条件が成立しました', body:'講師と教室が揃いました。保護者向け通知を確認できます。', cta:'通知へ進む', level:'ok' };
+      }
+
+      const done = {
+        teacherBase:   teacherRegistered && teacherActive,
+        teacherAssign: teacherAssigned,
+        roomBase:      roomRegistered && roomAvailable,
+        roomAssign:    roomAssigned,
+        notify:        bothAssigned,
+        student:       hasStudent,
+        seat:          hasStudent,
+        settings:      hasContact,
+      };
+
+      const completed = Object.keys(done).filter(k => done[k]).length;
+      return { next, done, steps: STEPS, completed, total: STEPS.length };
+    }
+
+    function render(container, goTab) {
+      if (!container) return;
+      const s = status();
+      const n = s.next;
+      container.innerHTML = '';
+      const wrap = h('div', { class: 'sds-workflow-card sds-workflow-' + (n ? n.level : 'ok') });
+      const head = h('div', { class: 'sds-workflow-head' });
+      head.appendChild(h('div', { class: 'sds-workflow-title' }, n ? n.title : '主要フローは完了しています'));
+      head.appendChild(h('div', { class: 'sds-workflow-count' }, s.completed + '/' + s.total));
+      wrap.appendChild(head);
+      wrap.appendChild(h('div', { class: 'sds-workflow-body' }, n ? n.body : '必要に応じて月謝・座席・設定を確認してください。'));
+
+      const meter = h('div', { class: 'sds-workflow-meter' });
+      const bar = h('div', { class: 'sds-workflow-meter-bar' });
+      bar.style.width = Math.round(s.completed / s.total * 100) + '%';
+      meter.appendChild(bar); wrap.appendChild(meter);
+
+      const chips = h('div', { class: 'sds-workflow-steps' });
+      s.steps.forEach(function(step) {
+        const isDone = !!s.done[step.key];
+        const isNext = n && n.tab === step.tab;
+        chips.appendChild(h('button', {
+          class: 'sds-workflow-step ' + (isDone ? 'done ' : '') + (isNext ? 'next ' : ''),
+          onClick: function() { goTab(step.tab); }
+        }, (isDone ? '✓ ' : isNext ? '▶ ' : '○ ') + step.label));
+      });
+      wrap.appendChild(chips);
+
+      if (n) {
+        wrap.appendChild(btn(n.cta, 'sds-btn-primary', function() { goTab(n.tab); }));
+      }
+      container.appendChild(wrap);
+    }
+
+    return { status: status, render: render };
+  })();
+
+  /* ══════════════════════════════════════
    *  メイン組み立て
    * ══════════════════════════════════════ */
   /* ── ダミーデータ（初期値）── */
@@ -1097,8 +1196,11 @@
     // ヘッダ
     root.appendChild(h('div', { style: 'display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;' },
       h('span', { style: 'font-size:18px;font-weight:700;' }, '塾管理 拡張SDS'),
-      badge('Web部品', 'info'), badge('v5', 'ok')
+      badge('Web部品', 'info'), badge('v6', 'ok'), badge('状態駆動UI', 'warn')
     ));
+
+    var workflowGuide = h('div', { class: 'sds-workflow-guide' });
+    root.appendChild(workflowGuide);
 
     var tabNav    = h('div', { class: 'sds-tabs' });
     var panelWrap = h('div', {});
@@ -1123,6 +1225,25 @@
     }
     EventBus.on('store:both-assigned', function() { flashTab('notification'); });
     EventBus.on('store:seat-full',     function() { flashTab('notification'); });
+
+    function updateWorkflowUI() {
+      WorkflowEngine.render(workflowGuide, switchTab);
+      var st = WorkflowEngine.status();
+      Object.keys(tabBtns).forEach(function(id) {
+        tabBtns[id].classList.remove('sds-tab-done', 'sds-tab-next');
+      });
+      st.steps.forEach(function(step) {
+        if (!tabBtns[step.tab]) return;
+        if (st.done[step.key]) tabBtns[step.tab].classList.add('sds-tab-done');
+        if (st.next && st.next.tab === step.tab) tabBtns[step.tab].classList.add('sds-tab-next');
+      });
+    }
+
+    root.addEventListener('click',  function() { setTimeout(updateWorkflowUI, 0); });
+    root.addEventListener('change', function() { setTimeout(updateWorkflowUI, 0); });
+    ['store:teachers-updated','store:rooms-updated','store:both-assigned','store:seat-full','store:students-updated','store:history-updated'].forEach(function(ev) {
+      EventBus.on(ev, function() { setTimeout(updateWorkflowUI, 0); });
+    });
 
     root.appendChild(tabNav);
     root.appendChild(panelWrap);
@@ -1153,7 +1274,8 @@
 
 
     switchTab(TABS[0].id);
-    log('SDS v5 初期化完了（全変更統合版）');
+    updateWorkflowUI();
+    log('SDS v6 初期化完了（状態駆動UIエンジン統合版）');
   }
 
   global.SDS = global.SDS || {};

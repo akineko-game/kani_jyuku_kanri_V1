@@ -235,3 +235,34 @@
 .sds-check-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
 .sds-check-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--sds-accent); cursor: pointer; }
 .sds-check-row label { cursor: pointer; }
+
+
+/* ══════════════════════════════════════
+ *  状態駆動UIエンジン（v6）
+ * ══════════════════════════════════════ */
+.sds-workflow-guide { margin-bottom: 16px; }
+.sds-workflow-card {
+  background: #fffdf8;
+  border: 1px solid var(--sds-border);
+  border-left: 5px solid var(--sds-accent);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(58,46,34,.06);
+}
+.sds-workflow-ok   { border-left-color: var(--sds-success); }
+.sds-workflow-info { border-left-color: var(--sds-accent); }
+.sds-workflow-warn { border-left-color: var(--sds-warning); }
+.sds-workflow-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.sds-workflow-title { font-size: 15px; font-weight: 700; color: var(--sds-text); }
+.sds-workflow-count { font-family: var(--sds-mono); font-size: 12px; color: var(--sds-muted); background: #f5ede0; border: 1px solid var(--sds-border); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.sds-workflow-body { font-size: 12px; color: var(--sds-muted); line-height: 1.6; margin-bottom: 10px; }
+.sds-workflow-meter { height: 6px; background: #e8e0d4; border-radius: 999px; overflow: hidden; margin-bottom: 10px; }
+.sds-workflow-meter-bar { height: 100%; background: var(--sds-accent); border-radius: 999px; transition: width .25s ease; }
+.sds-workflow-steps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sds-workflow-step { border: 1px solid var(--sds-border); background: #fdf8f0; color: var(--sds-muted); border-radius: 999px; padding: 4px 9px; font-size: 11px; font-family: var(--sds-font); cursor: pointer; transition: all .15s; }
+.sds-workflow-step:hover { border-color: var(--sds-accent); color: var(--sds-text); }
+.sds-workflow-step.done { background: #d6ead9; border-color: #90c098; color: var(--sds-success); }
+.sds-workflow-step.next { background: #f0e5cc; border-color: #d4b880; color: var(--sds-warning); font-weight: 700; }
+.sds-tab-btn.sds-tab-done { border-color: #90c098; color: var(--sds-success); }
+.sds-tab-btn.sds-tab-next { border-color: var(--sds-warning); box-shadow: 0 0 0 2px rgba(176,122,32,.15); font-weight: 700; }
+.sds-tab-btn.active.sds-tab-next { background: var(--sds-warning); border-color: var(--sds-warning); color: #fffdf8; }
