@@ -221,3 +221,40 @@
 /* ── プログレスバー ── */
 .sds-progress-wrap { background: #e8e0d4; border-radius: 4px; height: 6px; margin: 8px 0; }
 .sds-progress-bar  { height: 6px; border-radius: 4px; background: var(--sds-accent); transition: width .4s; }
+
+/* ── 連携ノート ── */
+.sds-linked {
+  font-family: var(--sds-mono);
+  font-size: 11px;
+  color: var(--sds-warning);
+  background: #f0e5cc;
+  border: 1px solid #d4b880;
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+/* ── ヒントテキスト ── */
+.sds-hint {
+  font-size: 11px;
+  color: var(--sds-danger);
+  margin: 4px 0 8px;
+  padding: 0;
+}
+
+/* ── 無効ボタン ── */
+.sds-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+/* ── 通知タブ点滅 ── */
+@keyframes sds-tab-flash {
+  0%   { background: var(--sds-accent); border-color: var(--sds-accent); color: #fdf8f0; }
+  50%  { background: var(--sds-warning); border-color: var(--sds-warning); color: #fdf8f0; }
+  100% { background: var(--sds-accent); border-color: var(--sds-accent); color: #fdf8f0; }
+}
+.sds-tab-flash {
+  animation: sds-tab-flash .4s ease 3;
+}
