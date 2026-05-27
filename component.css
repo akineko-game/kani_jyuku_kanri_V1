@@ -258,3 +258,171 @@
 .sds-tab-flash {
   animation: sds-tab-flash .4s ease 3;
 }
+
+/* ── エラーメッセージ ── */
+.sds-errmsg {
+  font-size: 12px;
+  color: var(--sds-danger);
+  background: #f0d8d8;
+  border: 1px solid #d4a0a0;
+  border-radius: 4px;
+  padding: 4px 10px;
+  margin: 4px 0 6px;
+}
+
+/* ── トースト（画面内のみ）── */
+.sds-toast {
+  position: absolute;
+  top: 16px; right: 16px;
+  font-size: 12px;
+  font-family: var(--sds-font);
+  padding: 8px 14px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  z-index: 100;
+  max-width: 300px;
+}
+.sds-toast-show    { opacity: 1; transform: translateY(0); }
+.sds-toast-success { background: #d6ead9; color: var(--sds-success); border: 1px solid #90c098; }
+.sds-toast-warn    { background: #f0e5cc; color: var(--sds-warning); border: 1px solid #d4b880; }
+.sds-toast-info    { background: #e8e0d4; color: var(--sds-accent);  border: 1px solid #c8b898; }
+.sds-root { position: relative; }
+
+/* ── 仕様確定ノート ── */
+.sds-spec-note {
+  font-family: var(--sds-mono);
+  font-size: 11px;
+  color: var(--sds-success);
+  background: #d6ead9;
+  border: 1px solid #90c098;
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+/* ── 自動作成理由 ── */
+.sds-auto-reason {
+  background: #e8e0d4;
+  border-left: 3px solid var(--sds-warning);
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 8px 0;
+  color: var(--sds-text);
+}
+
+/* ── 連絡先行 ── */
+.sds-contact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sds-border);
+  gap: 8px;
+}
+.sds-contact-row:last-of-type { border-bottom: none; }
+.sds-contact-info { font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.sds-contact-sub  { color: var(--sds-muted); font-size: 11px; }
+
+/* ── 履歴行 ── */
+.sds-history-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sds-border);
+  font-size: 12px;
+}
+.sds-history-at   { display: block; color: var(--sds-muted); font-family: var(--sds-mono); font-size: 11px; margin-bottom: 2px; }
+.sds-history-body { color: var(--sds-text); }
+
+/* ── チェックリスト行（設定反映）── */
+.sds-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.sds-check-row input[type=checkbox] {
+  width: 15px; height: 15px;
+  accent-color: var(--sds-accent);
+  cursor: pointer;
+}
+.sds-check-row label { cursor: pointer; }
+
+/* ── 月謝マトリクス ── */
+.sds-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.sds-matrix-th {
+  background: #ede8e0;
+  border: 1px solid var(--sds-border);
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--sds-muted);
+  white-space: nowrap;
+}
+.sds-matrix-td {
+  border: 1px solid var(--sds-border);
+  padding: 5px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.sds-matrix-label {
+  background: #ede8e0;
+  font-weight: 700;
+  color: var(--sds-text);
+  white-space: nowrap;
+  text-align: left;
+  padding-left: 10px;
+}
+.sds-matrix-subtotal {
+  background: #e8e0d4;
+  font-weight: 700;
+  color: var(--sds-accent);
+}
+.sds-matrix-grand {
+  background: #d6ead9;
+  font-weight: 700;
+  color: var(--sds-success);
+  font-size: 13px;
+}
+.sds-matrix-input {
+  width: 72px;
+  background: #fffdf8;
+  border: 1px solid var(--sds-border);
+  border-radius: 4px;
+  color: var(--sds-text);
+  font-family: var(--sds-mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  text-align: right;
+  outline: none;
+  transition: border-color .2s;
+}
+.sds-matrix-input:focus { border-color: var(--sds-accent); }
+
+/* ── ヒントテキスト ── */
+.sds-hint {
+  font-size: 11px;
+  color: var(--sds-danger);
+  margin: 4px 0 8px;
+}
+
+/* ── 無効ボタン ── */
+.sds-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── 通知タブ点滅 ── */
+@keyframes sds-tab-flash {
+  0%   { background: var(--sds-accent);  border-color: var(--sds-accent);  color: #fdf8f0; }
+  50%  { background: var(--sds-warning); border-color: var(--sds-warning); color: #fdf8f0; }
+  100% { background: var(--sds-accent);  border-color: var(--sds-accent);  color: #fdf8f0; }
+}
+.sds-tab-flash { animation: sds-tab-flash .4s ease 3; }
