@@ -1101,23 +1101,25 @@
         return dt.toLocaleString('ja-JP');
       }
 
-      // 講師（4名）
+      // 講師（5名）
       Store.teachers = [
-        { id: 'T001', name: '佐藤 明', state: '稼働中' },
+        { id: 'T001', name: '佐藤 明',   state: '稼働中' },
         { id: 'T002', name: '田中 恵子', state: '稼働中' },
-        { id: 'T003', name: '山田 浩', state: '休止中' },
-        { id: 'T004', name: '鈴木 由美', state: '登録済' },
+        { id: 'T003', name: '山田 浩',   state: '稼働中' },
+        { id: 'T004', name: '鈴木 由美', state: '休止中' },
+        { id: 'T005', name: '伊藤 健一', state: '登録済' },
       ];
       Store.activeTeachers = Store.teachers
         .filter(function(t) { return t.state === '稼働中'; })
         .map(function(t) { return { id: t.id, name: t.name }; });
 
-      // 教室（4室）
+      // 教室（5室）
       Store.rooms = [
-        { id: 'R001', name: 'A教室（個別）', state: '使用中' },
-        { id: 'R002', name: 'B教室（グループ）', state: '使用可能' },
-        { id: 'R003', name: 'C教室（大教室）', state: '使用可能' },
-        { id: 'R004', name: 'D教室（補習）', state: '停止中' },
+        { id: 'R001', name: 'A教室（個別指導）',   state: '使用中' },
+        { id: 'R002', name: 'B教室（少人数）',     state: '使用可能' },
+        { id: 'R003', name: 'C教室（グループ）',   state: '使用可能' },
+        { id: 'R004', name: 'D教室（大教室）',     state: '使用可能' },
+        { id: 'R005', name: 'E教室（補習・予備）', state: '停止中' },
       ];
       Store.availableRooms = Store.rooms
         .filter(function(r) { return r.state === '使用可能' || r.state === '使用中'; })
