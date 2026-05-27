@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SDS拡張コンポーネント — デモ</title>
+<title>SDS拡張コンポーネント v5 — デモ</title>
 <style>
-  /* 既存ホームページのスタイルを模した外側レイアウト */
   body {
     margin: 0; padding: 0;
     background: #f0e8d8;
@@ -19,7 +18,7 @@
     letter-spacing: .05em;
   }
   .site-body {
-    max-width: 900px;
+    max-width: 960px;
     margin: 32px auto;
     padding: 0 16px;
   }
@@ -30,42 +29,30 @@
     border-bottom: 1px solid #ddd3c0;
     padding-bottom: 6px;
   }
-  /* コンポーネントのマウント先 */
-  #sds-component {
-    margin-bottom: 40px;
-  }
+  #sds-component { margin-bottom: 40px; }
 </style>
-<!-- SDS専用CSS -->
 <link rel="stylesheet" href="component.css">
 </head>
 <body>
-
-<header class="site-header">既存ホームページ（デモ環境）</header>
-
+<header class="site-header">既存ホームページ（SDS v5 デモ環境）</header>
 <div class="site-body">
-  <p class="site-section-title">▼ 以下のエリアがSDS拡張コンポーネントの埋め込み領域です</p>
-
-  <!-- ↓ マウント先 -->
+  <p class="site-section-title">▼ 以下のエリアが SDS 拡張コンポーネントの埋め込み領域です</p>
   <div id="sds-component"></div>
-
   <p style="font-size:12px;color:#999;text-align:center;margin-top:32px;">
     既存ページのその他のコンテンツはここに続きます
   </p>
 </div>
-
-<!-- SDS本体JS -->
 <script src="component.js"></script>
 <script>
-  // 初期化
-  SDS.initComponent({
-    mountElement: '#sds-component',
-    options: {}
-  });
+  SDS.initComponent({ mountElement: '#sds-component' });
 
-  // EventBus サンプル購読
-  SDS.EventBus.on('teacher:稼働開始',   function(p){ console.log('[EventBus] 講師稼働開始', p); });
-  SDS.EventBus.on('seat:予約枠確保',     function(p){ console.log('[EventBus] 座席確保',     p); });
-  SDS.EventBus.on('notification:通知送信', function(p){ console.log('[EventBus] 通知送信',   p); });
+  // EventBus サンプル購読（外部連携の例）
+  SDS.EventBus.on('store:teachers-updated', function(p) { console.log('[EventBus] 講師リスト更新', p); });
+  SDS.EventBus.on('store:rooms-updated',    function(p) { console.log('[EventBus] 教室リスト更新', p); });
+  SDS.EventBus.on('store:both-assigned',    function(p) { console.log('[EventBus] 講師+教室 揃い', p); });
+  SDS.EventBus.on('store:seat-full',        function(p) { console.log('[EventBus] 満席', p); });
+  SDS.EventBus.on('store:students-updated', function(p) { console.log('[EventBus] 生徒リスト更新', p); });
+  SDS.EventBus.on('store:history-updated',  function(p) { console.log('[EventBus] 連絡履歴更新', p); });
 </script>
 </body>
 </html>
