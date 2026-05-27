@@ -993,6 +993,64 @@
   /* ══════════════════════════════════════
    *  メイン組み立て
    * ══════════════════════════════════════ */
+  /* ── ダミーデータ（初期値）── */
+  (function() {
+    var now = new Date();
+    function daysAgo(d) {
+      var dt = new Date(now); dt.setDate(dt.getDate() - d);
+      return dt.toLocaleString('ja-JP');
+    }
+
+    // 講師（5名）
+    Store.teachers = [
+      { id: 'T001', name: '佐藤 明',   state: '稼働中' },
+      { id: 'T002', name: '田中 恵子', state: '稼働中' },
+      { id: 'T003', name: '山田 浩',   state: '稼働中' },
+      { id: 'T004', name: '鈴木 由美', state: '休止中' },
+      { id: 'T005', name: '伊藤 健一', state: '登録済' },
+    ];
+    Store.activeTeachers = Store.teachers
+      .filter(function(t) { return t.state === '稼働中'; })
+      .map(function(t) { return { id: t.id, name: t.name }; });
+
+    // 教室（5室）
+    Store.rooms = [
+      { id: 'R001', name: 'A教室（個別指導）',   state: '使用中' },
+      { id: 'R002', name: 'B教室（少人数）',     state: '使用可能' },
+      { id: 'R003', name: 'C教室（グループ）',   state: '使用可能' },
+      { id: 'R004', name: 'D教室（大教室）',     state: '使用可能' },
+      { id: 'R005', name: 'E教室（補習・予備）', state: '停止中' },
+    ];
+    Store.availableRooms = Store.rooms
+      .filter(function(r) { return r.state === '使用可能' || r.state === '使用中'; })
+      .map(function(r) { return { id: r.id, name: r.name }; });
+
+    // 連絡先（4名）
+    Store.contacts = [
+      { id: 'C001', name: '山田 花子', tel: '090-1234-5678', mail: 'hanako.yamada@example.com' },
+      { id: 'C002', name: '田中 一郎', tel: '080-9876-5432', mail: 'ichiro.tanaka@example.com' },
+      { id: 'C003', name: '鈴木 美穂', tel: '070-1111-2222', mail: 'miho.suzuki@example.com' },
+      { id: 'C004', name: '佐藤 太郎', tel: '090-3333-4444', mail: 'taro.sato@example.com' },
+    ];
+
+    // 連絡履歴（4件）
+    Store.history = [
+      { at: daysAgo(0), reason: '担当講師・教室が確定しました' },
+      { at: daysAgo(1), reason: '座席が満席になりました' },
+      { at: daysAgo(3), reason: '月謝単価を改定しました' },
+      { at: daysAgo(7), reason: '夏期講習のご案内' },
+    ];
+
+    // 月謝生徒（4名）
+    Store.feeStudents = [
+      { id: 'ST001', name: '山田 太郎', subjectLabel: '数学', courseLabel: '週2回', gradeLabel: '中3' },
+      { id: 'ST002', name: '田中 花子', subjectLabel: '英語', courseLabel: '週1回', gradeLabel: '高1' },
+      { id: 'ST003', name: '鈴木 次郎', subjectLabel: '理科', courseLabel: '週3回', gradeLabel: '中2' },
+      { id: 'ST004', name: '佐藤 さくら', subjectLabel: '国語', courseLabel: '週2回', gradeLabel: '高3' },
+    ];
+
+    })();
+
   var TABS = [
     { id: 'teacher-mgmt',   label: '講師管理', build: buildTeacherMgmt },
     { id: 'teacher-assign', label: '講師割当', build: buildTeacherAssign },
@@ -1093,64 +1151,6 @@
     }
 
 
-    /* ── ダミーデータ注入 ── */
-    (function() {
-      var now = new Date();
-      function daysAgo(d) {
-        var dt = new Date(now); dt.setDate(dt.getDate() - d);
-        return dt.toLocaleString('ja-JP');
-      }
-
-      // 講師（5名）
-      Store.teachers = [
-        { id: 'T001', name: '佐藤 明',   state: '稼働中' },
-        { id: 'T002', name: '田中 恵子', state: '稼働中' },
-        { id: 'T003', name: '山田 浩',   state: '稼働中' },
-        { id: 'T004', name: '鈴木 由美', state: '休止中' },
-        { id: 'T005', name: '伊藤 健一', state: '登録済' },
-      ];
-      Store.activeTeachers = Store.teachers
-        .filter(function(t) { return t.state === '稼働中'; })
-        .map(function(t) { return { id: t.id, name: t.name }; });
-
-      // 教室（5室）
-      Store.rooms = [
-        { id: 'R001', name: 'A教室（個別指導）',   state: '使用中' },
-        { id: 'R002', name: 'B教室（少人数）',     state: '使用可能' },
-        { id: 'R003', name: 'C教室（グループ）',   state: '使用可能' },
-        { id: 'R004', name: 'D教室（大教室）',     state: '使用可能' },
-        { id: 'R005', name: 'E教室（補習・予備）', state: '停止中' },
-      ];
-      Store.availableRooms = Store.rooms
-        .filter(function(r) { return r.state === '使用可能' || r.state === '使用中'; })
-        .map(function(r) { return { id: r.id, name: r.name }; });
-
-      // 連絡先（4名）
-      Store.contacts = [
-        { id: 'C001', name: '山田 花子', tel: '090-1234-5678', mail: 'hanako.yamada@example.com' },
-        { id: 'C002', name: '田中 一郎', tel: '080-9876-5432', mail: 'ichiro.tanaka@example.com' },
-        { id: 'C003', name: '鈴木 美穂', tel: '070-1111-2222', mail: 'miho.suzuki@example.com' },
-        { id: 'C004', name: '佐藤 太郎', tel: '090-3333-4444', mail: 'taro.sato@example.com' },
-      ];
-
-      // 連絡履歴（4件）
-      Store.history = [
-        { at: daysAgo(0), reason: '担当講師・教室が確定しました' },
-        { at: daysAgo(1), reason: '座席が満席になりました' },
-        { at: daysAgo(3), reason: '月謝単価を改定しました' },
-        { at: daysAgo(7), reason: '夏期講習のご案内' },
-      ];
-
-      // 月謝生徒（4名）
-      Store.feeStudents = [
-        { id: 'ST001', name: '山田 太郎', subjectLabel: '数学', courseLabel: '週2回', gradeLabel: '中3' },
-        { id: 'ST002', name: '田中 花子', subjectLabel: '英語', courseLabel: '週1回', gradeLabel: '高1' },
-        { id: 'ST003', name: '鈴木 次郎', subjectLabel: '理科', courseLabel: '週3回', gradeLabel: '中2' },
-        { id: 'ST004', name: '佐藤 さくら', subjectLabel: '国語', courseLabel: '週2回', gradeLabel: '高3' },
-      ];
-
-      log('ダミーデータ注入完了（講師4名・教室4室・連絡先4件・生徒4名・履歴4件）');
-    })();
 
     switchTab(TABS[0].id);
     log('SDS v5 初期化完了（全変更統合版）');
