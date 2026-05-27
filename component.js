@@ -36,8 +36,9 @@
     roomAssigned:    false,
     contacts:        [],   // { id, name, tel, mail }
     history:         [],   // { at, reason }
-    // 月謝マトリクス: prices[teacherName][roomName] = 単価
     prices:          {},
+    // 月謝調整タブの生徒リスト — 座席制御タブと共有
+    feeStudents:     [],   // { id, name, subjectLabel, courseLabel, gradeLabel }
   };
 
   /* ── ステートマシン ── */
@@ -505,31 +506,23 @@
   /* ── 月謝調整（講師 × 教室 単価マトリクス）── */
   /* ════════════════════════════════════════
    *  月謝調整
-   *  計算式: 月謝 = 科目単価 + コース単価 + 学年単価  （3軸の単純加算）
-   *
-   *  画面は3タブ構成
-   *    [A] 単価設定  : 科目・コース・学年 それぞれの単価リストを編集
-   *    [B] 生徒登録  : 生徒ごとに科目・コース・学年を選択
-   *    [C] 月謝一覧  : 全生徒の月謝計算結果と合計を表示
+   *  計算式: 月謝 = 科目単価 + コース単価 + 学年単価（3軸の単純加算）
+   *  生徒リストは Store.feeStudents に保存し、座席制御タブと共有する
    * ════════════════════════════════════════ */
   function buildFeeAdjust(root) {
 
-    /* ── マスターデータ ── */
     const FeeData = {
-      // 科目単価リスト [{ label, price }]
       subjects: [
         { label: '数学', price: 5000 },
         { label: '英語', price: 5000 },
         { label: '理科', price: 4000 },
         { label: '国語', price: 4000 },
       ],
-      // コース単価リスト [{ label, price }]
       courses: [
         { label: '週1回', price: 0    },
         { label: '週2回', price: 3000 },
         { label: '週3回', price: 6000 },
       ],
-      // 学年単価リスト [{ label, price }]
       grades: [
         { label: '中1', price: 0    },
         { label: '中2', price: 0    },
@@ -538,13 +531,13 @@
         { label: '高2', price: 3000 },
         { label: '高3', price: 5000 },
       ],
-      // 生徒リスト [{ id, name, subjectLabel, courseLabel, gradeLabel }]
-      students: [],
     };
+
+    // 生徒リストは Store.feeStudents を正として使う（座席制御と共有）
+    function getStudents() { return Store.feeStudents; }
 
     let currentTab = 'price';
 
-    /* ── 計算: 3軸の単純加算 ── */
     function calcFee(subjectLabel, courseLabel, gradeLabel) {
       const s = FeeData.subjects.find(x => x.label === subjectLabel);
       const c = FeeData.courses.find(x => x.label === courseLabel);
@@ -552,7 +545,6 @@
       return (s ? s.price : 0) + (c ? c.price : 0) + (g ? g.price : 0);
     }
 
-    /* ── タブナビ ── */
     function renderTabs(wrap) {
       const tabs = [
         { key: 'price',   label: '① 単価設定' },
@@ -569,60 +561,47 @@
       wrap.appendChild(nav);
     }
 
-    /* ── [A] 単価設定タブ ── */
     function renderPriceTab(wrap) {
       wrap.appendChild(h('p', { class: 'sds-fee-desc' },
         '科目・コース・学年それぞれに単価を設定します。月謝 = 3つの合計です。'));
 
-      // 単価グループを汎用関数で描画
-      function renderPriceGroup(title, list) {
+      function renderGroup(title, list) {
         wrap.appendChild(h('div', { class: 'sds-fee-group-title' }, title));
         list.forEach(item => {
           const row = h('div', { class: 'sds-fee-price-row' });
           row.appendChild(h('span', { class: 'sds-fee-price-label' }, item.label));
           const ni = h('input', { class: 'sds-matrix-input' });
-          ni.type = 'number'; ni.min = '0'; ni.step = '500';
-          ni.value = String(item.price);
-          ni.addEventListener('input', () => {
-            item.price = parseInt(ni.value) || 0;
-            // 生徒一覧の金額プレビューに即時反映させるため再描画は行わない（入力中は保持）
-          });
-          const yen = h('span', { class: 'sds-fee-yen' }, '円 / 月');
-          row.appendChild(ni); row.appendChild(yen);
+          ni.type = 'number'; ni.min = '0'; ni.step = '500'; ni.value = String(item.price);
+          ni.addEventListener('input', () => { item.price = parseInt(ni.value) || 0; });
+          row.appendChild(ni);
+          row.appendChild(h('span', { class: 'sds-fee-yen' }, '円 / 月'));
           wrap.appendChild(row);
         });
       }
 
-      renderPriceGroup('科目単価', FeeData.subjects);
-      renderPriceGroup('コース単価（週1を基準に追加額）', FeeData.courses);
-      renderPriceGroup('学年単価（中1を基準に追加額）', FeeData.grades);
+      renderGroup('科目単価', FeeData.subjects);
+      renderGroup('コース単価（週1を0円として追加額）', FeeData.courses);
+      renderGroup('学年単価（中1を0円として追加額）', FeeData.grades);
 
-      // 計算式の説明
       wrap.appendChild(h('div', { class: 'sds-fee-formula' },
         h('span', { class: 'sds-fee-formula-label' }, '計算式'),
         h('span', { class: 'sds-fee-formula-body' }, '月謝 = 科目単価 ＋ コース単価 ＋ 学年単価')
       ));
-
-      // 例示
       const eg = calcFee('数学', '週2回', '中3');
       wrap.appendChild(h('div', { class: 'sds-fee-example' },
         `例）数学（週2回・中3）= ¥${FeeData.subjects.find(s=>s.label==='数学').price.toLocaleString()} ＋ ¥${FeeData.courses.find(c=>c.label==='週2回').price.toLocaleString()} ＋ ¥${FeeData.grades.find(g=>g.label==='中3').price.toLocaleString()} = ¥${eg.toLocaleString()}`
       ));
     }
 
-    /* ── [B] 生徒登録タブ ── */
     function renderStudentTab(wrap) {
       wrap.appendChild(h('p', { class: 'sds-fee-desc' },
-        '生徒ごとに受講する科目・コース・学年を選択して登録します。'));
+        '生徒を登録します。ここで登録した生徒は「座席制御」タブの予約にも使えます。'));
 
-      // 登録フォーム
       const form = h('div', { class: 'sds-fee-form' });
-
       form.appendChild(h('label', { class: 'sds-label' }, '生徒名'));
       const nameI = h('input', { class: 'sds-input', placeholder: '例: 山田 太郎' });
       form.appendChild(nameI);
 
-      // 科目セレクト
       form.appendChild(h('label', { class: 'sds-label' }, '科目'));
       const subSel = h('select', { class: 'sds-select' });
       FeeData.subjects.forEach(s => {
@@ -632,24 +611,20 @@
       });
       form.appendChild(subSel);
 
-      // コースセレクト
       form.appendChild(h('label', { class: 'sds-label' }, 'コース'));
       const courseSel = h('select', { class: 'sds-select' });
       FeeData.courses.forEach(c => {
         const o = document.createElement('option');
-        o.value = c.label;
-        o.textContent = `${c.label}（+¥${c.price.toLocaleString()}）`;
+        o.value = c.label; o.textContent = `${c.label}（+¥${c.price.toLocaleString()}）`;
         courseSel.appendChild(o);
       });
       form.appendChild(courseSel);
 
-      // 学年セレクト
       form.appendChild(h('label', { class: 'sds-label' }, '学年'));
       const gradeSel = h('select', { class: 'sds-select' });
       FeeData.grades.forEach(g => {
         const o = document.createElement('option');
-        o.value = g.label;
-        o.textContent = `${g.label}（+¥${g.price.toLocaleString()}）`;
+        o.value = g.label; o.textContent = `${g.label}（+¥${g.price.toLocaleString()}）`;
         gradeSel.appendChild(o);
       });
       form.appendChild(gradeSel);
@@ -672,49 +647,48 @@
         if (!nameI.value.trim()) {
           errEl = errMsg('⚠ 生徒名は必須です'); form.appendChild(errEl); return;
         }
-        FeeData.students.push({
-          id:           'st-' + Date.now(),
-          name:         nameI.value.trim(),
+        // Store.feeStudents に直接追加（座席制御と共有）
+        Store.feeStudents.push({
+          id: 'st-' + Date.now(),
+          name: nameI.value.trim(),
           subjectLabel: subSel.value,
           courseLabel:  courseSel.value,
           gradeLabel:   gradeSel.value,
         });
-        log(`生徒登録: ${nameI.value.trim()} / ${subSel.value} ${courseSel.value} ${gradeSel.value} → ¥${calcFee(subSel.value, courseSel.value, gradeSel.value).toLocaleString()}`);
+        EventBus.emit('store:students-updated', {});
+        log(`生徒登録: ${nameI.value.trim()} → ¥${calcFee(subSel.value, courseSel.value, gradeSel.value).toLocaleString()}`);
         render();
       }));
       wrap.appendChild(form);
 
-      // 登録済み一覧（簡易）
-      if (FeeData.students.length) {
-        wrap.appendChild(h('div', { class: 'sds-fee-group-title', style: 'margin-top:14px;' },
-          `登録済み（${FeeData.students.length}名）`));
-        FeeData.students.forEach(st => {
-          const fee = calcFee(st.subjectLabel, st.courseLabel, st.gradeLabel);
-          wrap.appendChild(h('div', { class: 'sds-fee-student-row' },
-            h('span', { class: 'sds-fee-student-name' }, st.name),
-            h('span', { class: 'sds-fee-student-detail' },
-              `${st.subjectLabel} / ${st.courseLabel} / ${st.gradeLabel}`),
-            h('span', { class: 'sds-fee-student-amt' }, `¥${fee.toLocaleString()}`),
-            btn('削除', 'sds-btn-danger', () => {
-              FeeData.students = FeeData.students.filter(x => x.id !== st.id);
-              log(`生徒削除: ${st.name}`); render();
-            })
-          ));
-        });
-      }
+      if (!getStudents().length) return;
+      wrap.appendChild(h('div', { class: 'sds-fee-group-title', style: 'margin-top:14px;' },
+        `登録済み（${getStudents().length}名）`));
+      getStudents().forEach(st => {
+        const fee = calcFee(st.subjectLabel, st.courseLabel, st.gradeLabel);
+        wrap.appendChild(h('div', { class: 'sds-fee-student-row' },
+          h('span', { class: 'sds-fee-student-name' }, st.name),
+          h('span', { class: 'sds-fee-student-detail' },
+            `${st.subjectLabel} / ${st.courseLabel} / ${st.gradeLabel}`),
+          h('span', { class: 'sds-fee-student-amt' }, `¥${fee.toLocaleString()}`),
+          btn('削除', 'sds-btn-danger', () => {
+            Store.feeStudents = Store.feeStudents.filter(x => x.id !== st.id);
+            EventBus.emit('store:students-updated', {});
+            log(`生徒削除: ${st.name}`); render();
+          })
+        ));
+      });
     }
 
-    /* ── [C] 月謝一覧タブ ── */
     function renderListTab(wrap) {
       wrap.appendChild(h('p', { class: 'sds-fee-desc' },
-        '登録済み生徒の月謝計算結果です。単価設定を変更すると自動的に再計算されます。'));
+        '登録済み生徒の月謝計算結果です。単価設定を変更すると再計算されます。'));
 
-      if (!FeeData.students.length) {
-        wrap.appendChild(h('p', { class: 'sds-hint' }, '※ 先に「② 生徒登録」タブで生徒を登録してください'));
+      if (!getStudents().length) {
+        wrap.appendChild(h('p', { class: 'sds-hint' }, '※ 先に「② 生徒登録」で生徒を登録してください'));
         return;
       }
 
-      // テーブル
       const table = h('table', { class: 'sds-matrix-table' });
       const thead = h('thead', {});
       const hRow  = h('tr', {});
@@ -724,54 +698,40 @@
 
       const tbody = h('tbody', {});
       let grandTotal = 0;
-
-      FeeData.students.forEach(st => {
+      getStudents().forEach(st => {
         const s   = FeeData.subjects.find(x => x.label === st.subjectLabel) || { price: 0 };
         const c   = FeeData.courses.find(x => x.label === st.courseLabel)   || { price: 0 };
         const g   = FeeData.grades.find(x => x.label === st.gradeLabel)     || { price: 0 };
         const fee = s.price + c.price + g.price;
         grandTotal += fee;
-
         const tr = h('tr', {});
-        [
-          st.name,
-          st.subjectLabel,
-          st.courseLabel,
-          st.gradeLabel,
-          `¥${s.price.toLocaleString()}`,
-          `¥${c.price.toLocaleString()}`,
-          `¥${g.price.toLocaleString()}`,
-        ].forEach((val, i) => {
-          const cls = i === 0 ? 'sds-matrix-td sds-matrix-label' : 'sds-matrix-td';
-          tr.appendChild(h('td', { class: cls }, val));
-        });
+        [st.name, st.subjectLabel, st.courseLabel, st.gradeLabel,
+          `¥${s.price.toLocaleString()}`, `¥${c.price.toLocaleString()}`, `¥${g.price.toLocaleString()}`
+        ].forEach((val, i) => tr.appendChild(h('td', {
+          class: i === 0 ? 'sds-matrix-td sds-matrix-label' : 'sds-matrix-td'
+        }, val)));
         tr.appendChild(h('td', { class: 'sds-matrix-td sds-matrix-grand' }, `¥${fee.toLocaleString()}`));
         tbody.appendChild(tr);
       });
 
-      // 合計行
       const totalRow = h('tr', {});
       ['合計', '', '', '', '', '', ''].forEach(v =>
         totalRow.appendChild(h('td', { class: 'sds-matrix-td sds-matrix-label' }, v)));
-      totalRow.appendChild(h('td', { class: 'sds-matrix-td sds-matrix-grand',
-        style: 'font-size:15px;' }, `¥${grandTotal.toLocaleString()}`));
+      totalRow.appendChild(h('td', { class: 'sds-matrix-td sds-matrix-grand', style: 'font-size:15px;' },
+        `¥${grandTotal.toLocaleString()}`));
       tbody.appendChild(totalRow);
-
       table.appendChild(tbody);
       wrap.appendChild(h('div', { style: 'overflow-x:auto;' }, table));
 
-      // 合計バー
       wrap.appendChild(h('div', { class: 'sds-fee-grand' },
-        h('span', {}, `全生徒 月謝合計（${FeeData.students.length}名）`),
+        h('span', {}, `全生徒 月謝合計（${getStudents().length}名）`),
         h('span', { class: 'sds-fee-grand-amt' }, `¥${grandTotal.toLocaleString()}`)
       ));
     }
 
-    /* ── メイン描画 ── */
     function render() {
       root.innerHTML = '';
       root.appendChild(badge('月謝調整', 'info'));
-
       const wrap = h('div', {});
       renderTabs(wrap);
       const content = h('div', { class: 'sds-fee-content' });
@@ -784,60 +744,227 @@
     render();
   }
 
-  /* ── 座席制御（UIのみ）── */
+  /* ════════════════════════════════════════
+   *  座席制御 — 授業コマ予約＋空き状況可視化
+   *  予約する生徒は Store.feeStudents（月謝調整タブと共有）から選択する
+   * ════════════════════════════════════════ */
   function buildSeat(root) {
-    const CAPACITY = 8;
-    let used = 3;
-    let seatFullEmitted = false;
 
-    const machine = createMachine('seat', '空きあり', {
-      '空きあり': { '予約枠確保': '空きあり' },
-      '満席':     { '予約枠解放': '空きあり' },
-    });
+    const Slots = { list: [] };
+    const DAYS     = ['月', '火', '水', '木', '金', '土', '日'];
+    const TIMES    = ['9:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+    const SUBJECTS = ['数学', '英語', '理科', '国語', '社会', '小論文'];
 
-    function render() {
-      root.innerHTML = '';
-      const full = used >= CAPACITY;
-      root.appendChild(badge(`状態: ${full?'満席':'空きあり'}`, full?'danger':'ok'));
-      root.appendChild(linkNote('満席 → 通知自動作成'));
+    let showAddForm = false;
+    let _r = null;
 
-      root.appendChild(infoRow('定員',  String(CAPACITY)));
-      root.appendChild(infoRow('使用数', String(used)));
+    // 月謝タブで生徒が追加・削除されたら再描画
+    EventBus.on('store:students-updated', () => { if (_r) _r(); });
 
-      const pct  = Math.round(used / CAPACITY * 100);
-      const wrap = h('div', { class: 'sds-progress-wrap' });
-      const bar  = h('div', { class: 'sds-progress-bar' });
-      bar.style.width      = `${pct}%`;
-      bar.style.background = full ? 'var(--sds-danger)' : 'var(--sds-accent)';
-      wrap.appendChild(bar); root.appendChild(wrap);
+    function slotBadgeType(slot) {
+      const r = slot.capacity - slot.bookings.length;
+      return r <= 0 ? 'danger' : r <= 2 ? 'warn' : 'ok';
+    }
+    function slotBadgeLabel(slot) {
+      const r = slot.capacity - slot.bookings.length;
+      return r <= 0 ? '満席' : `空き ${r}/${slot.capacity}`;
+    }
 
-      const grid = h('div', { class: 'sds-seat-grid' });
-      for (let i = 0; i < CAPACITY; i++) {
-        const cls = i < used ? (full?'sds-seat-cell full':'sds-seat-cell used') : 'sds-seat-cell';
-        grid.appendChild(h('div', { class: cls }, String(i+1)));
+    function renderSlotCard(slot) {
+      const isFull = slot.bookings.length >= slot.capacity;
+      const pct    = Math.min(100, Math.round(slot.bookings.length / slot.capacity * 100));
+
+      const c = h('div', { class: 'sds-slot-card' });
+
+      // ヘッダ
+      const head = h('div', { class: 'sds-slot-head' });
+      head.appendChild(h('span', { class: 'sds-slot-title' },
+        `${slot.day}曜 ${slot.time} ／ ${slot.subject}`));
+      head.appendChild(badge(slotBadgeLabel(slot), slotBadgeType(slot)));
+      head.appendChild(btn('削除', 'sds-btn-ghost sds-btn-sm', () => {
+        Slots.list = Slots.list.filter(s => s.id !== slot.id);
+        log(`コマ削除: ${slot.day}曜 ${slot.time} ${slot.subject}`);
+        render();
+      }));
+      c.appendChild(head);
+
+      // プログレスバー
+      const pw = h('div', { class: 'sds-progress-wrap' });
+      const pb = h('div', { class: 'sds-progress-bar' });
+      pb.style.width      = `${pct}%`;
+      pb.style.background = isFull ? 'var(--sds-danger)' : pct >= 70 ? 'var(--sds-warning)' : 'var(--sds-success)';
+      pw.appendChild(pb); c.appendChild(pw);
+
+      // 予約済み生徒
+      if (slot.bookings.length) {
+        const bl = h('div', { class: 'sds-booking-list' });
+        slot.bookings.forEach((name, i) => {
+          bl.appendChild(h('div', { class: 'sds-booking-row' },
+            h('span', { class: 'sds-booking-num' }, String(i + 1)),
+            h('span', { class: 'sds-booking-name' }, name),
+            btn('キャンセル', 'sds-btn-danger sds-btn-sm', () => {
+              slot.bookings.splice(i, 1);
+              log(`予約キャンセル: ${slot.day}曜 ${slot.time} ${slot.subject} / ${name}`);
+              render();
+            })
+          ));
+        });
+        c.appendChild(bl);
+      } else {
+        c.appendChild(h('p', { class: 'sds-slot-empty' }, '予約なし'));
       }
-      root.appendChild(grid);
 
-      if (!full) {
-        seatFullEmitted = false;
-        root.appendChild(btn('予約枠確保', 'sds-btn-primary', () => {
-          if (used < CAPACITY) used++;
-          machine.transition('予約枠確保');
-          if (used >= CAPACITY && !seatFullEmitted) {
-            seatFullEmitted = true;
-            EventBus.emit('store:seat-full', {});
-            log('🔗 連携[4] 満席 → 通知自動作成', 'link');
+      // 予約追加（満席でなければ）
+      if (!isFull) {
+        const addRow = h('div', { class: 'sds-booking-add-row' });
+        const students = Store.feeStudents;
+
+        let nameInput;
+        if (students.length) {
+          // 月謝タブの生徒リストをセレクトで表示
+          const sel = h('select', { class: 'sds-select sds-select-inline' });
+          const blank = document.createElement('option');
+          blank.value = ''; blank.textContent = '生徒を選択...'; sel.appendChild(blank);
+          students.forEach(st => {
+            // すでに予約済みの生徒はグレーアウト
+            const o = document.createElement('option');
+            o.value = st.name; o.textContent = st.name;
+            if (slot.bookings.includes(st.name)) {
+              o.textContent += '（予約済）'; o.disabled = true;
+            }
+            sel.appendChild(o);
+          });
+          nameInput = sel;
+        } else {
+          // 生徒未登録時は自由入力
+          nameInput = h('input', {
+            class: 'sds-input sds-input-inline',
+            placeholder: '生徒名を入力（月謝タブで登録すると選択式になります）',
+          });
+        }
+        addRow.appendChild(nameInput);
+
+        let errEl = null;
+        addRow.appendChild(btn('予約', 'sds-btn-success sds-btn-sm', () => {
+          if (errEl) { errEl.remove(); errEl = null; }
+          const name = (nameInput.value || '').trim();
+          if (!name) {
+            errEl = errMsg('⚠ 生徒を選択してください'); c.appendChild(errEl); return;
+          }
+          if (slot.bookings.includes(name)) {
+            errEl = errMsg(`⚠ ${name} はすでに予約済みです`); c.appendChild(errEl); return;
+          }
+          slot.bookings.push(name);
+          log(`予約追加: ${slot.day}曜 ${slot.time} ${slot.subject} / ${name}`);
+          if (slot.bookings.length >= slot.capacity) {
+            EventBus.emit('store:seat-full', { slot });
+            log(`🔗 連携[4] 満席: ${slot.day}曜 ${slot.time} ${slot.subject} → 通知自動作成`, 'link');
           }
           render();
         }));
+        c.appendChild(addRow);
+      }
+      return c;
+    }
+
+    function renderAddForm(wrap) {
+      const form = h('div', { class: 'sds-slot-form' });
+      form.appendChild(h('div', { class: 'sds-fee-group-title' }, '新しいコマを追加'));
+
+      form.appendChild(h('label', { class: 'sds-label' }, '曜日'));
+      const daySel = h('select', { class: 'sds-select' });
+      DAYS.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = `${d}曜日`; daySel.appendChild(o); });
+      form.appendChild(daySel);
+
+      form.appendChild(h('label', { class: 'sds-label' }, '開始時間'));
+      const timeSel = h('select', { class: 'sds-select' });
+      TIMES.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; timeSel.appendChild(o); });
+      form.appendChild(timeSel);
+
+      form.appendChild(h('label', { class: 'sds-label' }, '科目'));
+      const subSel = h('select', { class: 'sds-select' });
+      SUBJECTS.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; subSel.appendChild(o); });
+      form.appendChild(subSel);
+
+      form.appendChild(h('label', { class: 'sds-label' }, '定員（人）'));
+      const capI = h('input', { class: 'sds-input' });
+      capI.type = 'number'; capI.min = '1'; capI.max = '20'; capI.value = '6';
+      form.appendChild(capI);
+
+      let errEl = null;
+      const btnRow = h('div', { style: 'display:flex;gap:6px;margin-top:4px;' });
+      btnRow.appendChild(btn('追加', 'sds-btn-primary', () => {
+        if (errEl) { errEl.remove(); errEl = null; }
+        const cap = parseInt(capI.value) || 0;
+        if (cap < 1) { errEl = errMsg('⚠ 定員は1以上にしてください'); form.appendChild(errEl); return; }
+        const dup = Slots.list.find(s =>
+          s.day === daySel.value && s.time === timeSel.value && s.subject === subSel.value);
+        if (dup) { errEl = errMsg('⚠ 同じ曜日・時間・科目のコマがすでに存在します'); form.appendChild(errEl); return; }
+        Slots.list.push({
+          id: 'slot-' + Date.now(),
+          day: daySel.value, time: timeSel.value,
+          subject: subSel.value, capacity: cap, bookings: [],
+        });
+        log(`コマ追加: ${daySel.value}曜 ${timeSel.value} ${subSel.value} 定員${cap}名`);
+        showAddForm = false; render();
+      }));
+      btnRow.appendChild(btn('キャンセル', 'sds-btn-ghost', () => { showAddForm = false; render(); }));
+      form.appendChild(btnRow);
+      wrap.appendChild(form);
+    }
+
+    function renderSummary(wrap) {
+      if (!Slots.list.length) return;
+      const total     = Slots.list.reduce((s, sl) => s + sl.capacity, 0);
+      const booked    = Slots.list.reduce((s, sl) => s + sl.bookings.length, 0);
+      const fullCount = Slots.list.filter(sl => sl.bookings.length >= sl.capacity).length;
+      const bar = h('div', { class: 'sds-seat-summary' });
+      [
+        [String(Slots.list.length), 'コマ'],
+        [`${booked}/${total}`,       '予約数/定員計'],
+        [String(fullCount),          '満席コマ'],
+      ].forEach(([num, lbl], i) => {
+        const item = h('div', { class: `sds-seat-summary-item${i === 2 && fullCount ? ' sds-seat-summary-full' : ''}` });
+        item.appendChild(h('span', { class: 'sds-seat-summary-num' }, num));
+        item.appendChild(h('span', { class: 'sds-seat-summary-label' }, lbl));
+        bar.appendChild(item);
+      });
+      wrap.appendChild(bar);
+    }
+
+    function render() {
+      root.innerHTML = '';
+      root.appendChild(linkNote('満席 → 通知自動作成'));
+
+      // 生徒リストの状態を表示
+      const stCount = Store.feeStudents.length;
+      root.appendChild(h('div', { style: 'font-size:11px;color:var(--sds-muted);margin-bottom:8px;' },
+        stCount
+          ? `👤 月謝タブの生徒 ${stCount}名 を予約選択肢として使用しています`
+          : '👤 月謝調整タブで生徒を登録すると、予約がセレクト選択式になります'
+      ));
+
+      renderSummary(root);
+
+      const sorted = [...Slots.list].sort((a, b) => {
+        const di = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
+        return di !== 0 ? di : TIMES.indexOf(a.time) - TIMES.indexOf(b.time);
+      });
+
+      if (!sorted.length) {
+        root.appendChild(h('p', { style: 'color:var(--sds-muted);font-size:12px;margin:12px 0;' },
+          '授業コマがまだ登録されていません。「＋ コマを追加」から登録してください。'));
       } else {
-        root.appendChild(btn('予約枠解放', 'sds-btn-warning', () => {
-          if (used > 0) used--;
-          machine.transition('予約枠解放'); render();
-        }));
+        sorted.forEach(slot => root.appendChild(renderSlotCard(slot)));
+      }
+
+      if (showAddForm) {
+        renderAddForm(root);
+      } else {
+        root.appendChild(btn('＋ コマを追加', 'sds-btn-primary', () => { showAddForm = true; render(); }));
       }
     }
-    render();
+    _r = render; render();
   }
 
   /* ── 設定反映（チェックリスト・UIのみ）── */
