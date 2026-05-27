@@ -609,3 +609,262 @@
   100% { background:var(--sds-accent);  border-color:var(--sds-accent);  color:#fdf8f0; }
 }
 .sds-tab-flash { animation:sds-tab-flash .4s ease 3; }
+
+/* ════════════════════════════════════════
+ *  月謝調整 専用スタイル
+ * ════════════════════════════════════════ */
+
+/* ── 内部タブ ── */
+.sds-fee-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 12px;
+  border-bottom: 1px solid var(--sds-border);
+  padding-bottom: 8px;
+}
+.sds-fee-tab-btn {
+  background: transparent;
+  border: 1px solid var(--sds-border);
+  color: var(--sds-muted);
+  font-family: var(--sds-font);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.sds-fee-tab-btn:hover { color: var(--sds-text); border-color: var(--sds-accent); }
+.sds-fee-tab-btn.active {
+  background: var(--sds-accent);
+  border-color: var(--sds-accent);
+  color: #fdf8f0;
+  font-weight: 700;
+}
+
+/* ── 説明文 ── */
+.sds-fee-desc {
+  font-size: 12px;
+  color: var(--sds-muted);
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+/* ── コンテンツエリア ── */
+.sds-fee-content { margin-top: 4px; }
+
+/* ── 計算済みセル ── */
+.sds-fee-calc-cell {
+  color: var(--sds-muted);
+  font-family: var(--sds-mono);
+  font-size: 12px;
+  background: #f5ede0;
+}
+
+/* ── 生徒登録フォーム ── */
+.sds-fee-form {
+  background: #fffdf8;
+  border: 1px solid var(--sds-border);
+  border-radius: var(--sds-radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+/* ── 科目エントリ行 ── */
+.sds-fee-entries { margin: 6px 0 10px; }
+.sds-fee-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.sds-select-inline {
+  width: auto !important;
+  flex: 1;
+  min-width: 80px;
+  margin-bottom: 0 !important;
+  font-size: 12px !important;
+  padding: 5px 8px !important;
+}
+
+/* ── 生徒カード ── */
+.sds-student-card {
+  border: 1px solid var(--sds-border);
+  border-radius: var(--sds-radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #fffdf8;
+}
+.sds-student-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.sds-student-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--sds-text);
+  flex: 1;
+}
+.sds-student-fee {
+  font-family: var(--sds-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sds-success);
+}
+
+/* ── 受講内訳 ── */
+.sds-student-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sds-breakdown-item {
+  font-size: 11px;
+  font-family: var(--sds-mono);
+  background: #e8e0d4;
+  color: var(--sds-text);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+/* ── 月謝合計バー ── */
+.sds-fee-grand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #d6ead9;
+  border: 1px solid #90c098;
+  border-radius: var(--sds-radius);
+  padding: 10px 14px;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--sds-text);
+}
+.sds-fee-grand-amt {
+  font-family: var(--sds-mono);
+  font-size: 18px;
+  color: var(--sds-success);
+}
+
+/* ════════════════════════════════════════
+ *  月謝調整 専用スタイル（加算方式）
+ * ════════════════════════════════════════ */
+.sds-fee-tabs {
+  display: flex; gap: 4px;
+  margin: 10px 0 12px;
+  border-bottom: 1px solid var(--sds-border);
+  padding-bottom: 8px;
+}
+.sds-fee-tab-btn {
+  background: transparent;
+  border: 1px solid var(--sds-border);
+  color: var(--sds-muted);
+  font-family: var(--sds-font);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.sds-fee-tab-btn:hover { color: var(--sds-text); border-color: var(--sds-accent); }
+.sds-fee-tab-btn.active {
+  background: var(--sds-accent); border-color: var(--sds-accent);
+  color: #fdf8f0; font-weight: 700;
+}
+
+.sds-fee-desc {
+  font-size: 12px; color: var(--sds-muted);
+  margin: 0 0 12px; line-height: 1.6;
+}
+.sds-fee-content { margin-top: 4px; }
+
+/* ── 単価グループ ── */
+.sds-fee-group-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--sds-muted);
+  margin: 14px 0 6px;
+}
+.sds-fee-price-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px;
+}
+.sds-fee-price-label {
+  width: 140px; font-size: 13px; color: var(--sds-text);
+  flex-shrink: 0;
+}
+.sds-fee-yen {
+  font-size: 12px; color: var(--sds-muted); white-space: nowrap;
+}
+
+/* ── 計算式・例示 ── */
+.sds-fee-formula {
+  margin: 16px 0 6px;
+  background: #e8e0d4;
+  border-left: 3px solid var(--sds-accent);
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
+}
+.sds-fee-formula-label {
+  font-size: 11px; font-weight: 700; color: var(--sds-muted);
+  white-space: nowrap;
+}
+.sds-fee-formula-body {
+  font-family: var(--sds-mono); font-size: 12px; color: var(--sds-text);
+}
+.sds-fee-example {
+  font-size: 11px; color: var(--sds-muted);
+  font-family: var(--sds-mono);
+  background: #f5ede0;
+  border-radius: 4px; padding: 6px 10px;
+  margin-top: 4px;
+}
+
+/* ── 生徒登録フォーム ── */
+.sds-fee-form {
+  background: #fffdf8;
+  border: 1px solid var(--sds-border);
+  border-radius: var(--sds-radius);
+  padding: 14px; margin-bottom: 12px;
+}
+
+/* ── 登録予定月謝プレビュー ── */
+.sds-fee-preview {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #d6ead9; border: 1px solid #90c098;
+  border-radius: 6px; padding: 8px 12px;
+  margin: 8px 0 10px; font-size: 13px; font-weight: 700;
+  color: var(--sds-text);
+}
+.sds-fee-preview-amt {
+  font-family: var(--sds-mono); font-size: 18px; color: var(--sds-success);
+}
+
+/* ── 登録済み生徒行（② タブ内簡易表示）── */
+.sds-fee-student-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 0; border-bottom: 1px solid var(--sds-border);
+  font-size: 12px;
+}
+.sds-fee-student-row:last-of-type { border-bottom: none; }
+.sds-fee-student-name   { font-weight: 700; flex: 0 0 80px; }
+.sds-fee-student-detail { color: var(--sds-muted); flex: 1; }
+.sds-fee-student-amt    { font-family: var(--sds-mono); font-weight: 700; color: var(--sds-success); white-space: nowrap; }
+
+/* ── 合計バー ── */
+.sds-fee-grand {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #d6ead9; border: 1px solid #90c098;
+  border-radius: var(--sds-radius);
+  padding: 10px 14px; margin-top: 12px;
+  font-weight: 700; font-size: 13px; color: var(--sds-text);
+}
+.sds-fee-grand-amt {
+  font-family: var(--sds-mono); font-size: 20px; color: var(--sds-success);
+}
